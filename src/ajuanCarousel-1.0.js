@@ -53,7 +53,7 @@
     function AjuanCarousel(ele,opt){
         //接收用户传递的参数变量，并且防止用户不传递参数报错
         options = opt || {};
-        this.boxEle = _a(ele);                                                                      //主体DOM
+        this.boxEle = _a(ele);                                                                  //主体DOM
         this.click = options.click || DEFAULT.click;                                            //事件名
         this.fatherEleName = options.fatherEleName || DEFAULT.fatherEleName;                    //父元素标签名，默认ul元素，可以是class：'.class'，也可以使id: '.id'
         this.sonEleName = options.sonEleName || DEFAULT.sonEleName;                             //子元素标签名，默认li元素
@@ -88,7 +88,7 @@
     //获取信息
     function achieveData(that){
         //获取信息
-        that.fatherEle = that.boxEle.find(that.fatherEleName);  //获取轮播图父级元素对象
+        that.fatherEle = that.boxEle.find(that.fatherEleName);      //获取轮播图父级元素对象
         that.sonEleArr = that.fatherEle.find(that.sonEleName);      //获取轮播图元素对象数组
         that.length = that.sonEleArr.length;                        //获取轮播图的总个数
         //判断是否有索引
@@ -180,7 +180,30 @@
     }
     //轮播二，custom风格
     function runByCustom(that){
-
+        //判断当前页面和总数页面
+        if(that.index >= that.length) that.index = 0;
+        if(that.index < 0) that.index = that.length -1;
+        var css = that.custom.active;
+        //遍历页面
+        that.sonEleArr.each(function (index, item) {
+            //页面
+            var b = index == that.index;
+            if(b){
+                _a(item).addClass(css);
+            }else{
+                _a(item).removeClass(css);
+            }
+            //判断是否有索引容器
+            if(that.trigger) {
+                if(b){
+                    _a(that.triSonEleArr[index]).addClass(that.triActive);
+                }else{
+                    _a(that.triSonEleArr[index]).removeClass(that.triActive);
+                }
+            }
+            //回调函数
+            that.callback && that.callback();
+        })
     }
     //轮播三，滚动风格
     function runByRoll(that){
@@ -250,7 +273,6 @@
                 triRunFun(that,target);
                 return;
             }
-
         };
         _a(doc.body).on(that.click, clickEvent);
     }
