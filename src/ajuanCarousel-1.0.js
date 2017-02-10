@@ -19,9 +19,6 @@
 ;(function (win,doc,_a,undefined) {
     //定义变量
     var options, //用于接收用户传递的参数变量
-        mouseOverEvent,//事件变量，存储事件函数
-        mouseOutEvent,//事件变量，存储事件函数
-        clickEvent, //事件变量，存储事件函数
         //默认参数
         DEFAULT = {
             click:'click',              //事件名
@@ -336,14 +333,14 @@
     }
     //绑定事件的方法
     function onEvent(that){
-        mouseOutEvent = function () {
+        that.mouseOutEvent = function () {
             if(that.temp) clearInterval(that.temp);
             autoRun(that);
         };
-        mouseOverEvent = function () {
+        that.mouseOverEvent = function () {
             if(that.temp) clearInterval(that.temp);
         };
-        clickEvent = function (event) {
+        that.clickEvent = function (event) {
             //获取事件event与目标target
             var event = event || win.event,
                 target = event.target || event.srcElement;
@@ -368,18 +365,18 @@
                 return;
             }
         };
-        _a(doc.body).on(that.click, clickEvent);
+        _a(doc.body).on(that.click, that.clickEvent);
         if(that.isPauseByHover){
-            that.boxEle.on('mouseover', mouseOverEvent);
-            that.boxEle.on('mouseout', mouseOutEvent);
+            that.boxEle.on('mouseover', that.mouseOverEvent);
+            that.boxEle.on('mouseout', that.mouseOutEvent);
         }
     }
     //解除事件绑定的方法
     function unEvent(that){
-        if(clickEvent) _a(doc.body).unbind(that.click,clickEvent);
+        if(that.clickEvent) _a(doc.body).unbind(that.click,that.clickEvent);
         if(that.isPauseByHover){
-            that.boxEle.unbind('mouseover', mouseOverEvent);
-            that.boxEle.unbind('mouseout', mouseOutEvent);
+            that.boxEle.unbind('mouseover', that.mouseOverEvent);
+            that.boxEle.unbind('mouseout', that.mouseOutEvent);
         }
     }
     //动画库
