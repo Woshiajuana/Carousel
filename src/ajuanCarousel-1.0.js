@@ -19,6 +19,8 @@
 ;(function (win,doc,_a,undefined) {
     //定义变量
     var options, //用于接收用户传递的参数变量
+        mouseOverEvent,//事件变量，存储事件函数
+        mouseOutEvent,//事件变量，存储事件函数
         clickEvent, //事件变量，存储事件函数
         //默认参数
         DEFAULT = {
@@ -34,6 +36,8 @@
                 active:'active'         //风格样式默认class名为active
             },
             roll:{                      //风格选择滚动的时候，该参数可用
+                width:0,                //用户指定的宽度，number类型，没有默认值
+                height:0,               //用户指定的高度，number类型，没有默认值
                 during:400,             //轮播速度，默认400，单位ms
                 isAxisX:true            //滚动方向，X轴
             },
@@ -47,6 +51,7 @@
                 sonEleClass:'',         //元素标签的样式
                 active:'active'         //元素标签高亮样式
             },
+            isStopByHover:true,         //鼠标移动在主体上面，是否暂停滚动，默认true
             isAllSonForEle:true         //所有的元素参数名称是否属于主体DOM的子元素，默认为true
         };
     //构造函数
@@ -66,10 +71,11 @@
         this.mode = options.mode || DEFAULT.mode;                                               //轮播风格
         this.custom = options.custom || DEFAULT.custom;                                         //轮播风格为自定义，参数配置
         this.roll = options.roll || DEFAULT.roll;                                               //轮播风格为滚动，参数配置
+        this.isPauseByHover = options.isStopByHover || DEFAULT.isStopByHover;                    //鼠标移动在主体上面，是否暂停滚动，默认true
         this.isAllSonForEle = options.isAllSonForEle || DEFAULT.isAllSonForEle;                 //所有的元素参数名称是否属于主体DOM的子元素，默认为true
         this.callback = options.callback;                                                       //每滚动一屏，回调函数
     }
-    //原型
+    //原型，暴露一些操作接口
     AjuanCarousel.prototype = {
         //初始化方法
         init: function () {
@@ -82,6 +88,18 @@
         //解除事件绑定的方法
         unEvent: function () {
             unEvent(this);
+            return this;
+        },
+        //暂停滚动
+        pause: function(){
+            //清除定时器
+            if(this.temp) clearInterval(this.temp);
+            return this;
+        },
+        //滚动
+        paly:function(){
+            if(this.temp) clearInterval(this.temp);
+            autoRun(this);              //自动轮播
             return this;
         }
     };
@@ -129,9 +147,25 @@
         //重新获取一次索引元素
         that.triSonEleArr = that.triEle.find(tagName);
     }
-    //操作元素
-    function operateEle(that){
-
+    //当轮播是滚动（roll）风格时，需要操作元素
+    function operateEleByRoll(that){
+        //复制对象
+        var htmlStr = that.fatherEle.html();
+        that.fatherEle.html(htmlStr + htmlStr);
+        //如果滚动的方向是X轴，则
+        if(that.roll.isAxisX){
+            //给父元素宽度
+            that.fatherEle[0].style.width = that.dir * 2 * that.length + 'px';
+        }
+    }
+    //当轮播是滚动（roll）风格时，需要获取的数据
+    function achieveDataByRoll(that){
+        //方向
+        that.axis = that.roll.isAxisX ? 'left' : 'top';
+        //根据滚动的方向，获取滚动的距离
+        that.dir = that.roll.isAxisX ? (that.roll.width || that.boxEle[0].clientWidth) : (that.roll.height || that.boxEle[0].clientHeight);
+        //获取运动时间
+        that.during = that.roll.during || DEFAULT.roll.during;
     }
     //判断风格
     function isModFun(that){
@@ -145,6 +179,8 @@
                 break;
             case 'roll':
                 that.run = runByRoll;
+                achieveDataByRoll(that);
+                operateEleByRoll(that);
                 break;
         }
     }
@@ -174,6 +210,7 @@
                     _a(that.triSonEleArr[index]).removeClass(that.triActive);
                 }
             }
+            that.type = false;
             //回调函数
             that.callback && that.callback();
         })
@@ -201,16 +238,62 @@
                     _a(that.triSonEleArr[index]).removeClass(that.triActive);
                 }
             }
+            that.type = false;
             //回调函数
             that.callback && that.callback();
         })
     }
     //轮播三，滚动风格
     function runByRoll(that){
-
+        var obj = {},
+            i = that.index;
+        //判断当前页面和总数页面
+        if(that.index >= that.length) i = 0;
+        if(that.index < 0){
+            i = that.length -1;
+            that.fatherEle[0].style[that.axis] = '-' + that.dir * that.length +'px';
+            that.index = that.length - 1;
+        }
+        //判断是否有索引容器
+        if(that.trigger) {
+            that.triSonEleArr.each(function (index, item) {
+                if(i == index){
+                    _a(item).addClass(that.triActive);
+                }else{
+                    _a(item).removeClass(that.triActive);
+                }
+            });
+        }
+        //移动轮播图
+        obj[that.axis] = -(that.index) * that.dir;//获取参数对象
+        //判断是否是jQuery
+        if(that.fatherEle.animate){
+            that.fatherEle.animate(obj,that.during, function () {
+                //进行判断
+                if(that.index >= that.length){
+                    that.fatherEle[0].style[that.axis] = '-' + 0 + 'px';
+                    that.index = 0;
+                }
+                that.type = false;
+                that.callback && that.callback();
+            })
+        }else{
+            //调用动画库
+            packMove(that.fatherEle[0], obj, {duration: that.during}, function () {
+                //进行判断
+                if(that.index >= that.length){
+                    that.fatherEle[0].style[that.axis] = '-' + 0 + 'px';
+                    that.index = 0;
+                }
+                that.type = false;
+                that.callback && that.callback();
+            });
+        }
     }
     //上一张点击事件
     function prevRunFun(that){
+        if(that.type) return;
+        that.type = true;
         //清除当前自动滚动
         clearInterval(that.temp);
         //当前值减一
@@ -222,6 +305,8 @@
     }
     //下一张点击事件
     function nextRunFun(that){
+        if(that.type) return;
+        that.type = true;
         //清除当前自动滚动
         clearInterval(that.temp);
         //当前值加一
@@ -233,6 +318,8 @@
     }
     //索引点击事件
     function triRunFun(that,target){
+        if(that.type) return;
+        that.type = true;
         //清除当前自动滚动
         clearInterval(that.temp);
         //判断是哪一页
@@ -249,6 +336,13 @@
     }
     //绑定事件的方法
     function onEvent(that){
+        mouseOutEvent = function () {
+            if(that.temp) clearInterval(that.temp);
+            autoRun(that);
+        };
+        mouseOverEvent = function () {
+            if(that.temp) clearInterval(that.temp);
+        };
         clickEvent = function (event) {
             //获取事件event与目标target
             var event = event || win.event,
@@ -275,11 +369,256 @@
             }
         };
         _a(doc.body).on(that.click, clickEvent);
+        if(that.isPauseByHover){
+            that.boxEle.on('mouseover', mouseOverEvent);
+            that.boxEle.on('mouseout', mouseOutEvent);
+        }
     }
     //解除事件绑定的方法
     function unEvent(that){
         if(clickEvent) _a(doc.body).unbind(that.click,clickEvent);
+        if(that.isPauseByHover){
+            that.boxEle.unbind('mouseover', mouseOverEvent);
+            that.boxEle.unbind('mouseout', mouseOutEvent);
+        }
     }
+    //动画库
+    var packMove = (function(){
+            var getStyle = function(el, style){
+                if(/msie/i.test(navigator.userAgent)){
+                    style = style.replace(/\-(\w)/g, function(all, letter){
+                        return letter.toUpperCase();
+                    });
+                    var value = el.currentStyle[style];
+                    (value == "auto")&&(value = "0px" );
+                    return value;
+                }else{
+                    return document.defaultView.getComputedStyle(el,null).getPropertyValue(style);
+                }
+            };
+            var tween = {
+                easeInQuad: function(pos){
+                    return Math.pow(pos, 2);
+                },
+                easeOutQuad: function(pos){
+                    return -(Math.pow((pos-1), 2) -1);
+                },
+                easeInOutQuad: function(pos){
+                    if ((pos/=0.5) < 1) return 0.5*Math.pow(pos,2);
+                    return -0.5 * ((pos-=2)*pos - 2);
+                },
+                easeInCubic: function(pos){
+                    return Math.pow(pos, 3);
+                },
+                easeOutCubic: function(pos){
+                    return (Math.pow((pos-1), 3) +1);
+                },
+                easeInOutCubic: function(pos){
+                    if ((pos/=0.5) < 1) return 0.5*Math.pow(pos,3);
+                    return 0.5 * (Math.pow((pos-2),3) + 2);
+                },
+                easeInQuart: function(pos){
+                    return Math.pow(pos, 4);
+                },
+                easeOutQuart: function(pos){
+                    return -(Math.pow((pos-1), 4) -1)
+                },
+                easeInOutQuart: function(pos){
+                    if ((pos/=0.5) < 1) return 0.5*Math.pow(pos,4);
+                    return -0.5 * ((pos-=2)*Math.pow(pos,3) - 2);
+                },
+                easeInQuint: function(pos){
+                    return Math.pow(pos, 5);
+                },
+                easeOutQuint: function(pos){
+                    return (Math.pow((pos-1), 5) +1);
+                },
+                easeInOutQuint: function(pos){
+                    if ((pos/=0.5) < 1) return 0.5*Math.pow(pos,5);
+                    return 0.5 * (Math.pow((pos-2),5) + 2);
+                },
+                easeInSine: function(pos){
+                    return -Math.cos(pos * (Math.PI/2)) + 1;
+                },
+                easeOutSine: function(pos){
+                    return Math.sin(pos * (Math.PI/2));
+                },
+                easeInOutSine: function(pos){
+                    return (-.5 * (Math.cos(Math.PI*pos) -1));
+                },
+                easeInExpo: function(pos){
+                    return (pos==0) ? 0 : Math.pow(2, 10 * (pos - 1));
+                },
+                easeOutExpo: function(pos){
+                    return (pos==1) ? 1 : -Math.pow(2, -10 * pos) + 1;
+                },
+                easeInOutExpo: function(pos){
+                    if(pos==0) return 0;
+                    if(pos==1) return 1;
+                    if((pos/=0.5) < 1) return 0.5 * Math.pow(2,10 * (pos-1));
+                    return 0.5 * (-Math.pow(2, -10 * --pos) + 2);
+                },
+                easeInCirc: function(pos){
+                    return -(Math.sqrt(1 - (pos*pos)) - 1);
+                },
+                easeOutCirc: function(pos){
+                    return Math.sqrt(1 - Math.pow((pos-1), 2))
+                },
+                easeInOutCirc: function(pos){
+                    if((pos/=0.5) < 1) return -0.5 * (Math.sqrt(1 - pos*pos) - 1);
+                    return 0.5 * (Math.sqrt(1 - (pos-=2)*pos) + 1);
+                },
+                easeOutBounce: function(pos){
+                    if ((pos) < (1/2.75)) {
+                        return (7.5625*pos*pos);
+                    } else if (pos < (2/2.75)) {
+                        return (7.5625*(pos-=(1.5/2.75))*pos + .75);
+                    } else if (pos < (2.5/2.75)) {
+                        return (7.5625*(pos-=(2.25/2.75))*pos + .9375);
+                    } else {
+                        return (7.5625*(pos-=(2.625/2.75))*pos + .984375);
+                    }
+                },
+                easeInBack: function(pos){
+                    var s = 1.70158;
+                    return (pos)*pos*((s+1)*pos - s);
+                },
+                easeOutBack: function(pos){
+                    var s = 1.70158;
+                    return (pos=pos-1)*pos*((s+1)*pos + s) + 1;
+                },
+                easeInOutBack: function(pos){
+                    var s = 1.70158;
+                    if((pos/=0.5) < 1) return 0.5*(pos*pos*(((s*=(1.525))+1)*pos -s));
+                    return 0.5*((pos-=2)*pos*(((s*=(1.525))+1)*pos +s) +2);
+                },
+                elastic: function(pos) {
+                    return -1 * Math.pow(4,-8*pos) * Math.sin((pos*6-1)*(2*Math.PI)/2) + 1;
+                },
+                swingFromTo: function(pos) {
+                    var s = 1.70158;
+                    return ((pos/=0.5) < 1) ? 0.5*(pos*pos*(((s*=(1.525))+1)*pos - s)) :
+                    0.5*((pos-=2)*pos*(((s*=(1.525))+1)*pos + s) + 2);
+                },
+
+                swingFrom: function(pos) {
+                    var s = 1.70158;
+                    return pos*pos*((s+1)*pos - s);
+                },
+                swingTo: function(pos) {
+                    var s = 1.70158;
+                    return (pos-=1)*pos*((s+1)*pos + s) + 1;
+                },
+                bounce: function(pos) {
+                    if (pos < (1/2.75)) {
+                        return (7.5625*pos*pos);
+                    } else if (pos < (2/2.75)) {
+                        return (7.5625*(pos-=(1.5/2.75))*pos + .75);
+                    } else if (pos < (2.5/2.75)) {
+                        return (7.5625*(pos-=(2.25/2.75))*pos + .9375);
+                    } else {
+                        return (7.5625*(pos-=(2.625/2.75))*pos + .984375);
+                    }
+                },
+                bouncePast: function(pos) {
+                    if (pos < (1/2.75)) {
+                        return (7.5625*pos*pos);
+                    } else if (pos < (2/2.75)) {
+                        return 2 - (7.5625*(pos-=(1.5/2.75))*pos + .75);
+                    } else if (pos < (2.5/2.75)) {
+                        return 2 - (7.5625*(pos-=(2.25/2.75))*pos + .9375);
+                    } else {
+                        return 2 - (7.5625*(pos-=(2.625/2.75))*pos + .984375);
+                    }
+                },
+                easeFromTo: function(pos) {
+                    if ((pos/=0.5) < 1) return 0.5*Math.pow(pos,4);
+                    return -0.5 * ((pos-=2)*Math.pow(pos,3) - 2);
+                },
+                easeFrom: function(pos) {
+                    return Math.pow(pos,4);
+                },
+                easeTo: function(pos) {
+                    return Math.pow(pos,0.25);
+                },
+                linear:  function(pos) {
+                    return pos;
+                },
+                sinusoidal: function(pos) {
+                    return (-Math.cos(pos*Math.PI)/2) + 0.5;
+                },
+                reverse: function(pos) {
+                    return 1 - pos;
+                },
+                mirror: function(pos, transition) {
+                    transition = transition || tween.sinusoidal;
+                    if(pos<0.5)
+                        return transition(pos*2);
+                    else
+                        return transition(1-(pos-0.5)*2);
+                },
+                flicker: function(pos) {
+                    var pos = pos + (Math.random()-0.5)/5;
+                    return tween.sinusoidal(pos < 0 ? 0 : pos > 1 ? 1 : pos);
+                },
+                wobble: function(pos) {
+                    return (-Math.cos(pos*Math.PI*(9*pos))/2) + 0.5;
+                },
+                pulse: function(pos, pulses) {
+                    return (-Math.cos((pos*((pulses||5)-.5)*2)*Math.PI)/2) + .5;
+                },
+                blink: function(pos, blinks) {
+                    return Math.round(pos*(blinks||5)) % 2;
+                },
+                spring: function(pos) {
+                    return 1 - (Math.cos(pos * 4.5 * Math.PI) * Math.exp(-pos * 6));
+                },
+                none: function(pos){
+                    return 0;
+                },
+                full: function(pos){
+                    return 1;
+                }
+            };
+            function move(elem,json,options,callback){
+                options = options || {};
+                options.duration = options.duration || 2000;
+                options.ease = options.ease || tween.easeOutQuad;
+                var start = {},distance = {};
+                for(var atrr in json){
+                    if(atrr == "opacity"){
+                        start[atrr] = parseInt(100 * getStyle(elem, "opacity"));
+                    }else{
+                        start[atrr] = parseInt(getStyle(elem, atrr));
+                    }
+                    distance[atrr] = json[atrr] - start[atrr];
+                    var speed = (json[atrr] - start[atrr])/options.duration;
+                    speed=speed>0?Math.ceil(speed):Math.floor(speed);
+                    var startTime = new Date().getTime();
+                    (function(atrr){
+                        setTimeout(function(){
+                            var newTime = new Date().getTime();
+                            var easetime = (newTime - startTime)/options.duration;
+                            if (atrr == "opacity") {
+                                elem.style.filter = "alpha(opacity:" + (start[atrr] + options.ease(easetime) * distance[atrr]) + ")";
+                                elem.style.opacity = start[atrr]/100 + options.ease(easetime) * distance[atrr]/100;
+                            }else{
+                                elem.style[atrr] = Math.ceil(start[atrr] + options.ease(easetime) * distance[atrr]) + "px";
+                            }
+                            if(options.duration <= (newTime - startTime)){
+                                elem.style[atrr] = json[atrr] + "px";
+                                if(callback){
+                                    callback();
+                                }
+                            }else{
+                                setTimeout(arguments.callee,25);
+                            }
+                        },25)
+                    })(atrr)
+                }
+            }
+            return move;
+        })();
     //判断是否为amd，并且把AjuanCarousel暴露出去
     if(typeof define === 'function' && define.amd){
         define('AjuanCarousel',[],function(){return AjuanCarousel});

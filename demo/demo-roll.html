@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF-8">
+    <title>焦点图轮播之roll风格</title>
+    <link href="../css/reset.css" rel="stylesheet" type="text/css">
+    <style>
+        .title{line-height: 50px;font-size: 36px;text-align: center;}
+        .main{position: relative;width: 1000px;height: 420px;border: 1px solid #ddd;margin: 0 auto 50px;overflow: hidden;}
+        .main-carousel{position: absolute;top: 0;left: 0;height: 100%;width: 9999px;}
+        #Car-roll-X .main-item{float: left;}
+        .main-item{width:1000px;height: 100%;text-align: center;font-size: 36px;color: #000;font-weight: bold;line-height: 420px;}
+        .main-item-1{background-color: #59bdb2;}
+        .main-item-2{background-color: #397ba2;}
+        .main-item-3{background-color: #667d84;}
+        .main-item-4{background-color: #c5ae70;}
+        .main-trigger{position: absolute;left: 0;right: 0;text-align: center;font-size: 0;bottom: 20px;}
+        .trigger-item{display: inline-block;width: 12px;height: 12px;background-color: #ccc;cursor: pointer;border-radius: 50%;margin: 0 5px;}
+        .trigger-item.active{background-color: red;}
+        .next-btn,.prev-btn{position: absolute;width: 40px;height: 80px;top: 50%;margin-top: -40px;background-color: #dddddd;cursor: pointer;}
+        .next-btn{right: 0;}
+        .prev-btn{left: 0}
+    </style>
+</head>
+<body>
+
+    <!--默认主体HTML结构-->
+    <h2 class="title">X轴轮播滚动</h2>
+    <div id="Car-roll-X" class="main">
+        <ul class="main-carousel">
+            <li class="main-item main-item-1">第一张</li>
+            <li class="main-item main-item-2">第二张</li>
+            <li class="main-item main-item-3">第三张</li>
+            <li class="main-item main-item-4">第四张</li>
+        </ul>
+        <div class="main-trigger">
+            <i class="trigger-item active"></i>
+            <i class="trigger-item"></i>
+            <i class="trigger-item"></i>
+            <i class="trigger-item"></i>
+        </div>
+        <i class="prev-btn"></i>
+        <i class="next-btn"></i>
+    </div>
+    <!--/默认参数格式-->
+
+    <!--自定义主体HTML结构-->
+    <h2 class="title">Y轴轮播滚动</h2>
+    <div id="Car-roll-Y" class="main">
+        <div class="main-carousel">
+            <div class="main-item main-item-1">第一张</div>
+            <div class="main-item main-item-2">第二张</div>
+            <div class="main-item main-item-3">第三张</div>
+            <div class="main-item main-item-4">第四张</div>
+        </div>
+        <div class="main-trigger">
+            <i class="trigger-item active"></i>
+            <i class="trigger-item"></i>
+            <i class="trigger-item"></i>
+            <i class="trigger-item"></i>
+        </div>
+        <i class="prev-btn"></i>
+        <i class="next-btn"></i>
+    </div>
+    <!--/自定义主体HTML结构-->
+
+
+    <!--<script src="../lib/Ajuan-1.0.js" type="text/javascript"></script>-->
+    <script src="../lib/jquery-1.8.3.js" type="text/javascript"></script>
+    <!--<script src="../lib/zepto.js" type="text/javascript"></script>-->
+    <script src="../src/ajuanCarousel-1.0.js" type="text/javascript"></script>
+    <script>
+        var _a = window.Ajuan || window.jQuery || window.Zepto;
+
+        //X轴轮播滚动
+        _a('#Car-roll-X').AjuanCarousel({
+            mode:'roll',
+            trigger:{
+                triEleName:'.main-trigger'
+            },
+            btn:{
+                prevEleName:'.prev-btn',
+                nextEleName:'.next-btn'
+            }
+        });
+
+        //Y轴轮播滚动
+        _a('#Car-roll-Y').AjuanCarousel({
+            mode:'roll',
+            roll:{
+                isAxisX:false
+            },
+            fatherEleName:'.main-carousel',
+            sonEleName:'.main-item',
+            trigger:{
+                triEleName:'.main-trigger'
+            },
+            btn:{
+                prevEleName:'.prev-btn',
+                nextEleName:'.next-btn'
+            }
+        });
+
+    </script>
+</body>
+</html>
