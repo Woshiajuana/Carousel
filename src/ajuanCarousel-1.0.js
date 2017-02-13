@@ -46,9 +46,14 @@
                 triEleName:'',          //元素标签名，可以是class：'.class'，也可以使id: '.id'
                 sonEleTagName:'i',      //元素标签名
                 sonEleClass:'',         //元素标签的样式
-                active:'active'         //元素标签高亮样式
+                active:'active',        //元素标签高亮样式
+                triFun: ''              //回调函数，当索引滚动的样式不符合的时候，自定义方法
             },
-            isStopByHover:true,         //鼠标移动在主体上面，是否暂停滚动，默认true
+            lazyLoad:{
+                is:false,               //是否懒加载，默认不启用，
+                attr:'data-src'         //启用懒加载的默认替换属性名
+            },
+            isPauseByHover:true,        //鼠标移动在主体上面，是否暂停滚动，默认true
             isAllSonForEle:true         //所有的元素参数名称是否属于主体DOM的子元素，默认为true
         };
     //构造函数
@@ -68,7 +73,8 @@
         this.mode = options.mode || DEFAULT.mode;                                               //轮播风格
         this.custom = options.custom || DEFAULT.custom;                                         //轮播风格为自定义，参数配置
         this.roll = options.roll || DEFAULT.roll;                                               //轮播风格为滚动，参数配置
-        this.isPauseByHover = options.isStopByHover || DEFAULT.isStopByHover;                    //鼠标移动在主体上面，是否暂停滚动，默认true
+        this.lazyLoad = options.lazyLoad || DEFAULT.lazyLoad;                                   //用户懒加载启用的参数
+        this.isPauseByHover = options.isPauseByHover || DEFAULT.isPauseByHover;                 //鼠标移动在主体上面，是否暂停滚动，默认true
         this.isAllSonForEle = options.isAllSonForEle || DEFAULT.isAllSonForEle;                 //所有的元素参数名称是否属于主体DOM的子元素，默认为true
         this.callback = options.callback;                                                       //每滚动一屏，回调函数
     }
@@ -120,12 +126,27 @@
             if(!that.triSonEleArr.length)
                 createTriggerSonEle(that,tagName);    //没有索引则去创建
         }
+        //判断是否有索引函数
+        if(that.trigger)
+            that.triFun = that.trigger.triFun;
         //判断是否有按钮
         if(that.btn){
             if(that.btn.prevEleName)
                 that.prevEle = that.isAllSonForEle ? that.boxEle.find(that.btn.prevEleName) : _a(that.btn.prevEleName);
             if(that.btn.nextEleName)
                 that.nextEle = that.isAllSonForEle ? that.boxEle.find(that.btn.nextEleName) : _a(that.btn.nextEleName);
+        }
+        //判断是否要懒加载
+        if(that.lazyLoad.is){
+            if(!that.lazyLoad.attr) that.lazyLoad.attr = DEFAULT.lazyLoad.attr;
+            that.lazyItemArr = [];
+            that.boxEle.find('img').each(function (index, item) {
+                var src = item.getAttribute(that.lazyLoad.attr);
+                if(src){
+                    item.src = src;
+                    item.removeAttribute(that.lazyLoad.attr);
+                }
+            });
         }
     }
     //创建索引对象
@@ -200,13 +221,15 @@
             var b = index == that.index;
             item.style.display = b ? 'block' : 'none';
             //判断是否有索引容器
-            if(that.trigger) {
+            if(that.triSonEleArr) {
                 if(b){
                     _a(that.triSonEleArr[index]).addClass(that.triActive);
                 }else{
                     _a(that.triSonEleArr[index]).removeClass(that.triActive);
                 }
             }
+            //判断是否有索引回调函数
+            that.triFun && that.triFun(that.index);
             that.type = false;
             //回调函数
             that.callback && that.callback();
@@ -228,13 +251,15 @@
                 _a(item).removeClass(css);
             }
             //判断是否有索引容器
-            if(that.trigger) {
+            if(that.triSonEleArr) {
                 if(b){
                     _a(that.triSonEleArr[index]).addClass(that.triActive);
                 }else{
                     _a(that.triSonEleArr[index]).removeClass(that.triActive);
                 }
             }
+            //判断是否有索引回调函数
+            that.triFun && that.triFun(that.index);
             that.type = false;
             //回调函数
             that.callback && that.callback();
@@ -252,7 +277,7 @@
             that.index = that.length - 1;
         }
         //判断是否有索引容器
-        if(that.trigger) {
+        if(that.triSonEleArr) {
             that.triSonEleArr.each(function (index, item) {
                 if(i == index){
                     _a(item).addClass(that.triActive);
@@ -261,6 +286,8 @@
                 }
             });
         }
+        //判断是否有索引回调函数
+        that.triFun && that.triFun(i);
         //移动轮播图
         obj[that.axis] = -(that.index) * that.dir;//获取参数对象
         //判断是否是jQuery

@@ -14,6 +14,7 @@
         .main-item-2{background-color: #397ba2;}
         .main-item-3{background-color: #667d84;}
         .main-item-4{background-color: #c5ae70;}
+        .main-carousel img{display: block;height: 100%;width: 100%;}
         .main-trigger{position: absolute;left: 0;right: 0;text-align: center;font-size: 0;bottom: 20px;}
         .trigger-item{display: inline-block;width: 12px;height: 12px;background-color: #ccc;cursor: pointer;border-radius: 50%;margin: 0 5px;}
         .trigger-item.active{background-color: red;}
@@ -28,10 +29,10 @@
     <h2 class="title">X轴轮播滚动</h2>
     <div id="Car-roll-X" class="main">
         <ul class="main-carousel">
-            <li class="main-item main-item-1">第一张</li>
-            <li class="main-item main-item-2">第二张</li>
-            <li class="main-item main-item-3">第三张</li>
-            <li class="main-item main-item-4">第四张</li>
+            <li class="main-item main-item-1"><img s="../img/1.jpg" alt=""/></li>
+            <li class="main-item main-item-2"><img s="../img/2.jpg" alt=""/></li>
+            <li class="main-item main-item-3"><img s="../img/3.jpg" alt=""/></li>
+            <li class="main-item main-item-4"><img s="../img/4.jpg" alt=""/></li>
         </ul>
         <div class="main-trigger">
             <i class="trigger-item active"></i>
@@ -65,8 +66,8 @@
     <!--/自定义主体HTML结构-->
 
 
-    <!--<script src="../lib/Ajuan-1.0.js" type="text/javascript"></script>-->
-    <script src="../lib/jquery-1.8.3.js" type="text/javascript"></script>
+    <script src="../lib/Ajuan-1.0.js" type="text/javascript"></script>
+    <!--<script src="../lib/jquery-1.8.3.js" type="text/javascript"></script>-->
     <!--<script src="../lib/zepto.js" type="text/javascript"></script>-->
     <script src="../src/ajuanCarousel-1.0.js" type="text/javascript"></script>
     <script>
@@ -75,6 +76,10 @@
         //X轴轮播滚动
         var arr = _a('#Car-roll-X').AjuanCarousel({
             mode:'roll',
+            lazyLoad:{
+                is:true,
+                attr:'s'  //默认是data-src
+            },
             trigger:{
                 triEleName:'.main-trigger',
                 triFun: function (index) {
