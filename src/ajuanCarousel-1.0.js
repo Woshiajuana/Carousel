@@ -36,6 +36,7 @@
                 width:0,                //用户指定的宽度，number类型，没有默认值
                 height:0,               //用户指定的高度，number类型，没有默认值
                 during:400,             //轮播速度，默认400，单位ms
+                isLoop:true,            //是否自动滚动
                 isAxisX:true            //滚动方向，X轴
             },
             btn:{                       //按钮配置信息
@@ -66,16 +67,15 @@
         this.sonEleName = options.sonEleName || DEFAULT.sonEleName;                             //子元素标签名，默认li元素
         this.index = options.index || DEFAULT.index;                                            //轮播初始值
         this.speed = options.speed || DEFAULT.speed;                                            //轮播频率
-        this.isAuto = options.isAuto || DEFAULT.isAuto;                                         //是否自动滚动
-        this.isLoop = options.isLoop || DEFAULT.isLoop;                                         //是否连续滚动
+        this.isAuto = typeof options.isAuto === 'undefined'? DEFAULT.isAuto : options.isAuto;   //是否自动滚动
         this.btn = options.btn;                                                                 //按钮参数配置
         this.trigger = options.trigger;                                                         //索引参数配置
         this.mode = options.mode || DEFAULT.mode;                                               //轮播风格
         this.custom = options.custom || DEFAULT.custom;                                         //轮播风格为自定义，参数配置
         this.roll = options.roll || DEFAULT.roll;                                               //轮播风格为滚动，参数配置
         this.lazyLoad = options.lazyLoad || DEFAULT.lazyLoad;                                   //用户懒加载启用的参数
-        this.isPauseByHover = options.isPauseByHover || DEFAULT.isPauseByHover;                 //鼠标移动在主体上面，是否暂停滚动，默认true
-        this.isAllSonForEle = options.isAllSonForEle || DEFAULT.isAllSonForEle;                 //所有的元素参数名称是否属于主体DOM的子元素，默认为true
+        this.isPauseByHover = typeof options.isPauseByHover === 'undefined' ? DEFAULT.isPauseByHover : options.isPauseByHover;//鼠标移动在主体上面，是否暂停滚动，默认true
+        this.isAllSonForEle = typeof options.isAllSonForEle === 'undefined' ? DEFAULT.isAllSonForEle : options.isAllSonForEle;//所有的元素参数名称是否属于主体DOM的子元素，默认为true
         this.callback = options.callback;                                                       //每滚动一屏，回调函数
     }
     //原型，暴露一些操作接口
@@ -170,20 +170,28 @@
         //复制对象
         var htmlStr = that.fatherEle.html();
         that.fatherEle.html(htmlStr + htmlStr);
-        //如果滚动的方向是X轴，则
-        if(that.roll.isAxisX){
+        //如果滚动的方向是X轴，且需要连续滚动则
+        if(that.isAxisX && that.isLoop){
             //给父元素宽度
             that.fatherEle[0].style.width = that.dir * 2 * that.length + 'px';
         }
     }
     //当轮播是滚动（roll）风格时，需要获取的数据
     function achieveDataByRoll(that){
+        //判断
+        that.isAxisX = typeof that.roll.isAxisX === 'undefined' ? DEFAULT.roll.isAxisX : that.roll.isAxisX;
         //方向
-        that.axis = that.roll.isAxisX ? 'left' : 'top';
+        that.axis = that.isAxisX ? 'left' : 'top';
+        //获取宽
+        that.width = that.roll.width && (typeof that.roll.width === 'string'? that.boxEle.find(that.roll.width)[0].clientWidth : that.roll.width);
+        //获取高
+        that.height = that.roll.height && (typeof that.roll.height === 'string'? that.boxEle.find(that.roll.height)[0].clientHeight : that.roll.height);
         //根据滚动的方向，获取滚动的距离
-        that.dir = that.roll.isAxisX ? (that.roll.width || that.boxEle[0].clientWidth) : (that.roll.height || that.boxEle[0].clientHeight);
+        that.dir = that.isAxisX ? (that.width || that.boxEle[0].clientWidth) : (that.height || that.boxEle[0].clientHeight);
         //获取运动时间
         that.during = that.roll.during || DEFAULT.roll.during;
+        //获取是否需要连续滚动
+        that.isLoop = that.roll.isLoop || DEFAULT.roll.isLoop;
     }
     //判断风格
     function isModFun(that){
